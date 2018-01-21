@@ -39,7 +39,7 @@
 					each: function(fn) {
 						return jQuery.each(this, fn);
 					},
-					map:function(fn){
+					map: function(fn) {
 						return jQuery.map(this, fn);
 					},
 					eq: function(i) {
@@ -178,15 +178,23 @@
 							div.innerHTML = selector;
 							[].push.apply(this, div.childNodes);
 						} else {
-							[].push.apply(this, document.querySelectorAll(selector));
+
+							try {
+								[].push.apply(this, document.querySelectorAll(selector));
+							} catch(e) {
+								// 如果报错了，那么手动补一个length属性，代表没有获取到任何元素
+								this.length = 0;
+							}
+
+							//[].push.apply(this, document.querySelectorAll(selector));
 						}
 					} else if(jQuery.isArray(selector)) {
 						[].push.apply(this, [].slice.call(selector))
 					} else if(jQuery.isFunction(selector)) {
 						jQuery.ready(selector)
 					} else {
-							this[0] = selector;
-							this.length = 1;
+						this[0] = selector;
+						this.length = 1;
 					}
 				}
 				init.prototype = jQuery.fn;
@@ -195,7 +203,7 @@
 		</script>
 		<script>
 			$(function() {
-				console.log($("a").toArray())
+				//				console.log($("a").toArray())
 			})
 		</script>
 	</head>
@@ -205,7 +213,131 @@
 		<a href="">2</a>
 		<a href="">3</a>
 		<a href="">4</a>
+		<span>123</span>
+		<div>
+			<a href="">1
+				<span>2</span>
+			</a>
+		</div>
+		<div>
 
+		</div>
+		<div></div>
+		<b>1</b>
+		<b>2</b>
+		<sp></sp>
 	</body>
+	<!--DOM方法-->
+	<script>
+		$.fn.extend({
+			//清空所选元素的内容，包括子元素的内容。元素还保留着。
+			empty: function() {
+				this.each(function(i, val) {
+					//					val.innerHTML = "";
+					this.innerHTML = "";
+
+				})
+				return this;
+			},
+			//删除这个元素及其所有子元素
+			remove: function() {
+				this.each(function(i, val) {
+					val.parentNode.removeChild(val)
+				});
+				return this;
+			},
+			//没传参就是获取第一个元素的内容，传参就是设置每一个元素的innerHTML=参数
+			html: function(html) {
+				if(arguments.length === 0) {
+					return this[0].innerHTML;
+				} else if(arguments.length >= 1) {
+					this.each(function(i, val) {
+						//val.innerHTML = html;
+						this.innerHTML = html;
+					})
+				}
+				return this;
+			},
+			text: function(html) {
+				var result = "";
+				if(arguments.length === 0) {
+					this.each(function() {
+						result += this.innerText;
+					});
+					return result;
+				} else if(arguments.length >= 1) {
+					this.each(function() {
+						this.innerText = html;
+
+					})
+				}
+				return this;
+			},
+			//把所选元素增加到指点元素
+			appendTo: function(selector) {
+				//返回一个数组，里面包括增加的元素
+				var result = [],
+					temp = "";
+				//把元素包装成jq的元素，统一处理
+				var Selector = jQuery(selector);
+				//console.log(this) this构造函数，谁调用是谁
+				this.each(function() {
+					var _this = this;
+					//console.log(this)  this相当于val 是遍历每一项的值
+					Selector.each(function(i) {
+						if(i === 0) {
+							temp = _this;
+
+						} else {
+							temp = _this.cloneNode(true);
+						}
+
+						this.appendChild(temp);
+						result.push(temp);
+					})
+
+				})
+				return jQuery(result);
+			},
+			//把元素增加到指定元素的前面
+			prependTo: function(selector) {
+				var result = [],
+					temp = "";
+				var Selector = jQuery(selector);
+				this.each(function() {
+					var _this = this;
+					Selector.each(function(i) {
+						temp = i === 0 ? _this : _this.cloneNode(true);
+						this.insertBefore(temp, this.firstChild);
+						result.push(temp);
+					})
+
+				})
+				return jQuery(result);
+			},
+			// 给所有元素添加html内容，或者其他元素
+			append: function(html) {
+				var $html = jQuery(html);
+				if(jQuery.isString(html)) {
+					this.each(function() {
+						this.innerHTML += html;
+					})
+				} else {
+					$html.appendTo(this)
+				}
+				return this;
+			}
+
+		})
+
+		//		$("span").empty()
+		//		console.log($("div"))
+		//		console.log($("div").html())
+		//		console.log($("a").text("a123"))
+		//		$("<h3>3<h3>").appendTo($("div"))
+		//		console.log($('b').appendTo( $('sp') ))
+		//		console.log($('b').append("gfdsg"));
+		//		$('a').append($("b"))
+	</script>
 
 </html>
