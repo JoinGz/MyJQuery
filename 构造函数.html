@@ -165,6 +165,13 @@
 							})
 						}
 
+					},
+					getStyle: function(dom, style) {
+						if(window.getComputedStyle) {
+							return window.getComputedStyle(dom)[style];
+						} else {
+							return dom.currentStyle[style];
+						}
 					}
 
 				})
@@ -185,7 +192,6 @@
 								// 如果报错了，那么手动补一个length属性，代表没有获取到任何元素
 								this.length = 0;
 							}
-
 							//[].push.apply(this, document.querySelectorAll(selector));
 						}
 					} else if(jQuery.isArray(selector)) {
@@ -203,14 +209,14 @@
 		</script>
 		<script>
 			$(function() {
-				//				console.log($("a").toArray())
+				//console.log($("a").toArray())
 			})
 		</script>
 	</head>
 
 	<body>
-		<a href="">1</a>
-		<a href="">2</a>
+		<a href="" class="a b">1</a>
+		<a href="" class="b a">2</a>
 		<a href="">3</a>
 		<a href="">4</a>
 		<span>123</span>
@@ -224,8 +230,9 @@
 		</div>
 		<div></div>
 		<b>1</b>
-		<b>2</b>
+		<b class="aaa">2</b>
 		<sp></sp>
+		<input type="text"  value="1"/>
 	</body>
 	<!--DOM方法-->
 	<script>
@@ -233,7 +240,7 @@
 			//清空所选元素的内容，包括子元素的内容。元素还保留着。
 			empty: function() {
 				this.each(function(i, val) {
-					//					val.innerHTML = "";
+					//val.innerHTML = "";
 					this.innerHTML = "";
 
 				})
@@ -326,6 +333,124 @@
 					$html.appendTo(this)
 				}
 				return this;
+			},
+			//给所有元素前面添加html内容，或者其他元素
+			prepend: function(selector) {
+				var Selector = jQuery(selector);
+				if(jQuery.isString(selector)) {
+					this.each(function() {
+						this.innerHTML = selector + this.innerHTML;
+					})
+				} else {
+					Selector.prependTo(this);
+				}
+				return this;
+			},
+			//穿一个参数就返回这个参数的属性值，传两个和对象就设置这个属性节点
+			attr: function(attr, val) {
+				if(!jQuery.isObj(attr) && !jQuery.isString(attr)) {
+					return this;
+				} else if(jQuery.isString(attr)) {
+					if(arguments.length === 1) {
+						return this[0].getAttribute(attr);
+					} else {
+						this.each(function() {
+							this.setAttribute(attr, val);
+						})
+					}
+				} else if(jQuery.isObj(attr)) {
+					this.each(function() {
+						var _this = this;
+						jQuery.each(attr, function(i, key) {
+							_this.setAttribute(i, key)
+						})
+					})
+				}
+				return this;
+			},
+			//设置DOM元素的属性值
+			prop: function(attr, val) {
+				if(!jQuery.isObj(attr) && !jQuery.isString(attr)) {
+					return this;
+				} else if(jQuery.isString(attr)) {
+					if(arguments.length === 1) {
+						return this[0][attr];
+					} else {
+						this.each(function() {
+							this[attr] = val;
+						})
+					}
+				} else if(jQuery.isObj(attr)) {
+					this.each(function() {
+						var _this = this;
+						jQuery.each(attr, function(i, key) {
+							_this[i] = key
+						})
+					})
+				}
+				return this;
+			},
+			//一个参数，就返回参数的css值，两个和对象就设置css
+			css: function(attr, val) {
+				if(arguments.length === 1) {
+					if(jQuery.isString(attr)) {
+						return jQuery.getStyle(this[0], attr)
+					} else if(jQuery.isObj(attr)) {
+						this.each(function() {
+							var _this = this;
+							jQuery.each(attr, function(i, val1) {
+								_this.style[i] = val1;
+							})
+						})
+
+					}
+				} else if(arguments.length >= 2) {
+					this.each(function() {
+						this.style[attr] = val;
+					})
+				}
+				return this;
+			},
+			//一个参数就返回这个值，两个和对象就设置
+			val:function(val){
+				if(arguments.length ===0 ){
+					return this.prop("value")
+				}else{
+					return this.prop("value",val)
+				}
+			},
+			hasClass:function(val){
+				var booltrue = false;
+				this.each(function(){
+					if((" "+this.className+" ").indexOf(" "+ val +" ")>-1){
+						booltrue=true;
+						return false;
+					}
+				})
+				return booltrue;
+			},
+			addClass:function(val){
+				this.each(function(){
+					if(!jQuery(this).hasClass(val)){
+						this.className += " " + val;
+					}
+					
+				})
+				return this;
+			},
+			removeClass:function(val){
+				if(arguments.length === 0){
+					this.each(function(){
+						this.className = "";
+					})
+				}
+				else{
+					this.each(function(){
+						this.className = (" "+this.className+" ").replace(" "+val+" ","")
+				})
+				}
+				
+				return this;
 			}
 
 		})
@@ -338,6 +463,20 @@
 		//		console.log($('b').appendTo( $('sp') ))
 		//		console.log($('b').append("gfdsg"));
 		//		$('a').append($("b"))
+		//		$('span').prepend( 'a<span>内嵌span</span>' )
+		//		$("a").attr({"a":"n","c":"b"})
+		//		console.log($("a").attr({"a":"n","c":"b"}).attr("c"));
+//		$("span").css({
+//			"display": "block",
+//			"background": "green",
+//			"padding": "30px"
+//		})
+//$("input").val("123")
+//console.log($("input").val())
+//console.log($("b").hasClass("b"))
+//console.log($("b").hasClass("aaa"))
+//			$("a").addClass("b a c ").addClass(" b c d ")
+//$("a").removeClass("b")
 	</script>
 
 </html>
