@@ -165,6 +165,26 @@
 							})
 						}
 
+					},
+					addEvent:function(ele,type,fn){
+						if(!ele.nodeType||!jQuery.isString( type ) || !jQuery.isFunction( fn )){
+							return ;
+						}
+						if(ele.addEventListener){
+							ele.addEventListener(type,fn)
+						}else{
+							ele.attachEvent("on"+type,fn)
+						}
+					},
+					removeEvent:function(ele,type,fn){
+						if(!ele.nodeType||!jQuery.isString( type ) || !jQuery.isFunction( fn )){
+							return ;
+						}
+						if(ele.removeEventListener){
+							ele.removeEventListener(type,fn)
+						}else{
+							ele.detachEvent("on"+type,fn)
+						}
 					}
 
 				})
@@ -326,6 +346,60 @@
 					$html.appendTo(this)
 				}
 				return this;
+			},
+			on:function(type,fn){
+//				this.each(function(){
+//					jQuery.addEvent(this,type,fn);
+//				})
+				this.each(function(){
+					//先看有没有这个数组，没就创建
+					this.$event_cache = this.$event_cache || {};
+					var _this = this;
+					//看是不是第一次创建这种类型的事件，不是就增加
+					if(!this.$event_cache[type]){
+						this.$event_cache[type] =[];
+						this.$event_cache[type].push(fn);
+						jQuery.addEvent(this,type,function(e){
+							jQuery.each(_this.$event_cache[type],function(){
+								this.call(_this,e)
+							})
+						})
+						//有这个类型的事件就直接添加
+					}else{
+						this.$event_cache[type].push(fn);
+					}
+				})
+				return this;
+			},
+			off:function(type,fn){
+//				this.each(function(){
+//					jQuery.removeEvent(this,type,fn);
+//				})
+				var argLength = arguments.length;
+				this.each(function(){
+					if(!this.$event_cache){
+						return ;
+					}
+					else if(argLength === 0){
+						for (var key in this.$event_cache){
+							
+							this.$event_cache[key] = [];
+							
+						}
+					}
+					else if(argLength === 1){
+						this.$event_cache[type] = [];
+					}else if(argLength >= 2){
+						for(var i= this.$event_cache[type].length-1 ; i>=0;i--){
+							if(this.$event_cache[type][i]===fn){
+								this.$event_cache[type].splice(i,1)
+							}
+						}
+					}
+				})
+				
+				
+				return this;
 			}
 
 		})
@@ -338,6 +412,20 @@
 		//		console.log($('b').appendTo( $('sp') ))
 		//		console.log($('b').append("gfdsg"));
 		//		$('a').append($("b"))
+		$("b").on("click",function(){
+			console.log(1)
+		}).on("click",function(){
+			console.log(2)
+		}).on("click",function(){
+			console.log(3)
+		}).on("click",function(){
+			console.log(4)
+		}).on("mouseout",function(){
+			console.log("jinlail")
+		})
+		setTimeout(function(){
+			$("b").off("mouseout")
+		},3000)
 	</script>
 
 </html>
