@@ -58,13 +58,23 @@
 					push: [].push,
 					sort: [].sort,
 					splice: [].splice
-
 				}
 				//给构造函数和原型链增加extend方法，用于增加方法
-				jQuery.extend = jQuery.fn.extend = function(obj) {
-					for(var key in obj) {
-						this[key] = obj[key];
+				jQuery.extend = jQuery.fn.extend = function() {
+					if(arguments.length === 1){
+						for(var key in arguments[0]) {
+							this[key] = arguments[0][key];
+						}
+						return this;
+					}else if(arguments.length >= 2){
+						for (var i = 1,len = arguments.length;i<len;i++){
+							for(var key in arguments[i]){
+								arguments[0][key] = arguments[i][key]
+							}
+						}
+						return arguments[0];
 					}
+					
 				}
 				//给jq构造函数的属性
 				jQuery.extend({
@@ -101,12 +111,10 @@
 							}
 						}
 						return result;
-
 					},
 					slice: function() {
 						return jQuery([].slice.apply(this, arguments))
 					},
-
 					isHtml: function(val) {
 						if(!val) {
 							return false;
@@ -133,7 +141,6 @@
 						}
 						return false;
 					},
-
 					isArray: function(val) {
 						if(jQuery.isFunction(val) || !jQuery.isObj(val) || jQuery.isWindow(val)) {
 							return false;
@@ -164,29 +171,40 @@
 								}
 							})
 						}
-
+					},
+					getStyle: function(dom, style) {
+						if(window.getComputedStyle) {
+							return window.getComputedStyle(dom)[style];
+						} else {
+							return dom.currentStyle[style];
+						}
+					},
+					trim: function(str) {
+						if(!str) {
+							return str;
+						}
+						if(str.trim) {
+							return str.trim();
+						}
+						return str.replace(/^\s+|\s+$/g, "")
 					},
 					addEvent:function(ele,type,fn){
-						if(!ele.nodeType||!jQuery.isString( type ) || !jQuery.isFunction( fn )){
-							return ;
-						}
+						if( !ele.nodeType || !jQuery.isString( type ) || !jQuery.isFunction( fn ) ) {
+                    return;
+                }
 						if(ele.addEventListener){
 							ele.addEventListener(type,fn)
 						}else{
 							ele.attachEvent("on"+type,fn)
 						}
 					},
-					removeEvent:function(ele,type,fn){
-						if(!ele.nodeType||!jQuery.isString( type ) || !jQuery.isFunction( fn )){
-							return ;
-						}
+					removeEvent:function(){
 						if(ele.removeEventListener){
 							ele.removeEventListener(type,fn)
 						}else{
 							ele.detachEvent("on"+type,fn)
 						}
 					}
-
 				})
 				var init = jQuery.fn.init = function(selector) {
 					if(!selector) {
@@ -198,14 +216,12 @@
 							div.innerHTML = selector;
 							[].push.apply(this, div.childNodes);
 						} else {
-
 							try {
 								[].push.apply(this, document.querySelectorAll(selector));
 							} catch(e) {
 								// 如果报错了，那么手动补一个length属性，代表没有获取到任何元素
 								this.length = 0;
 							}
-
 							//[].push.apply(this, document.querySelectorAll(selector));
 						}
 					} else if(jQuery.isArray(selector)) {
@@ -223,14 +239,14 @@
 		</script>
 		<script>
 			$(function() {
-				//				console.log($("a").toArray())
+				//console.log($("a").toArray())
 			})
 		</script>
 	</head>
 
 	<body>
-		<a href="">1</a>
-		<a href="">2</a>
+		<a href="" class="a b e ">1</a>
+		<a href="" class="b a kkk">2</a>
 		<a href="">3</a>
 		<a href="">4</a>
 		<span>123</span>
@@ -240,12 +256,13 @@
 			</a>
 		</div>
 		<div>
-
+			<button onclick="go()">dian</button>
 		</div>
 		<div></div>
 		<b>1</b>
-		<b>2</b>
+		<b class="aaa">2</b>
 		<sp></sp>
+		<input type="text" value="1" />
 	</body>
 	<!--DOM方法-->
 	<script>
@@ -253,9 +270,8 @@
 			//清空所选元素的内容，包括子元素的内容。元素还保留着。
 			empty: function() {
 				this.each(function(i, val) {
-					//					val.innerHTML = "";
+					//val.innerHTML = "";
 					this.innerHTML = "";
-
 				})
 				return this;
 			},
@@ -288,7 +304,6 @@
 				} else if(arguments.length >= 1) {
 					this.each(function() {
 						this.innerText = html;
-
 					})
 				}
 				return this;
@@ -307,15 +322,12 @@
 					Selector.each(function(i) {
 						if(i === 0) {
 							temp = _this;
-
 						} else {
 							temp = _this.cloneNode(true);
 						}
-
 						this.appendChild(temp);
 						result.push(temp);
 					})
-
 				})
 				return jQuery(result);
 			},
@@ -331,7 +343,6 @@
 						this.insertBefore(temp, this.firstChild);
 						result.push(temp);
 					})
-
 				})
 				return jQuery(result);
 			},
@@ -347,63 +358,208 @@
 				}
 				return this;
 			},
-			on:function(type,fn){
-//				this.each(function(){
-//					jQuery.addEvent(this,type,fn);
-//				})
-				this.each(function(){
-					//先看有没有这个数组，没就创建
-					this.$event_cache = this.$event_cache || {};
-					var _this = this;
-					//看是不是第一次创建这种类型的事件，不是就增加
-					if(!this.$event_cache[type]){
-						this.$event_cache[type] =[];
-						this.$event_cache[type].push(fn);
-						jQuery.addEvent(this,type,function(e){
-							jQuery.each(_this.$event_cache[type],function(){
-								this.call(_this,e)
+			//给所有元素前面添加html内容，或者其他元素
+			prepend: function(selector) {
+				var Selector = jQuery(selector);
+				if(jQuery.isString(selector)) {
+					this.each(function() {
+						this.innerHTML = selector + this.innerHTML;
+					})
+				} else {
+					Selector.prependTo(this);
+				}
+				return this;
+			},
+			//穿一个参数就返回这个参数的属性值，传两个和对象就设置这个属性节点
+			attr: function(attr, val) {
+				if(!jQuery.isObj(attr) && !jQuery.isString(attr)) {
+					return this;
+				} else if(jQuery.isString(attr)) {
+					if(arguments.length === 1) {
+						return this[0].getAttribute(attr);
+					} else {
+						this.each(function() {
+							this.setAttribute(attr, val);
+						})
+					}
+				} else if(jQuery.isObj(attr)) {
+					this.each(function() {
+						var _this = this;
+						jQuery.each(attr, function(i, key) {
+							_this.setAttribute(i, key)
+						})
+					})
+				}
+				return this;
+			},
+			//设置DOM元素的属性值
+			prop: function(attr, val) {
+				if(!jQuery.isObj(attr) && !jQuery.isString(attr)) {
+					return this;
+				} else if(jQuery.isString(attr)) {
+					if(arguments.length === 1) {
+						return this[0][attr];
+					} else {
+						this.each(function() {
+							this[attr] = val;
+						})
+					}
+				} else if(jQuery.isObj(attr)) {
+					this.each(function() {
+						var _this = this;
+						jQuery.each(attr, function(i, key) {
+							_this[i] = key
+						})
+					})
+				}
+				return this;
+			},
+			//一个参数，就返回参数的css值，两个和对象就设置css
+			css: function(attr, val) {
+				if(arguments.length === 1) {
+					if(jQuery.isString(attr)) {
+						return jQuery.getStyle(this[0], attr)
+					} else if(jQuery.isObj(attr)) {
+						this.each(function() {
+							var _this = this;
+							jQuery.each(attr, function(i, val1) {
+								_this.style[i] = val1;
 							})
 						})
-						//有这个类型的事件就直接添加
-					}else{
-						this.$event_cache[type].push(fn);
 					}
+				} else if(arguments.length >= 2) {
+					this.each(function() {
+						this.style[attr] = val;
+					})
+				}
+				return this;
+			},
+			//一个参数就返回这个值，两个和对象就设置
+			val: function(val) {
+				if(arguments.length === 0) {
+					return this.prop("value")
+				} else {
+					return this.prop("value", val)
+				}
+			},
+			hasClass: function(val) {
+				var booltrue = false;
+				this.each(function() {
+					if((" " + this.className + " ").indexOf(" " + val + " ") > -1) {
+						booltrue = true;
+						return false;
+					}
+				})
+				return booltrue;
+			},
+			addClass: function(val) {
+				//				this.each(function(){
+				//					if(!jQuery(this).hasClass(val)){
+				//						this.className += " " + val;
+				//					}
+				//					
+				//				})
+				val = jQuery.trim(val).split(" ");
+				this.each(function() {
+					var _this = jQuery(this);
+					jQuery.each(val, function(i, vval) {
+						if(!_this.hasClass(vval)) {
+							_this[0].className += " " + val;
+						}
+					})
+				})
+				return this;
+			},
+			removeClass: function(val) {
+				if(arguments.length === 0) {
+					this.each(function() {
+						this.className = "";
+					})
+				} else {
+					val = jQuery.trim(val).split(" ");
+					this.each(function() {
+						var _this = this;
+						jQuery.each(val, function(i, vval) {
+//							_this.className = (" " + _this.className + " ").replace(" " + vval + " ", " ");
+							_this.className = _this.className.replace(new RegExp("\\b" + vval + "\\b"), "");
+							
+						})
+					})
+				}
+				return this;
+			},
+			toggleClass: function(val) {
+				
+					// 这里的this是遍历到的每一个原生DOM，
+					// 先包装成JQ对象，就可以复用之前写好的方法了
+					val = jQuery.trim(val).split(" ");
+					this.each(function() {
+						var _this = jQuery(this);
+						jQuery.each(val, function(i,vval) {
+							if(_this.hasClass(vval)) {
+								_this.removeClass(vval);
+							} else {
+								_this.addClass(vval);
+							}
+						})
+					});
+				
+				return this;
+			},
+			on:function(type,fn){
+				
+				this.each(function(){
+					this.$event_cache = this.$event_cache || {};
+					var _this = this;
+					if(!this.$event_cache[type]){
+					
+					this.$event_cache[type] = [];
+					this.$event_cache[type].push(fn);
+					jQuery.addEvent(this,type,function(e){
+						jQuery.each(_this.$event_cache[type],function(){
+							this.call(_this,e)
+						})
+					})
+				}else{
+					this.$event_cache[type].push(fn);
+				}
 				})
 				return this;
 			},
 			off:function(type,fn){
-//				this.each(function(){
-//					jQuery.removeEvent(this,type,fn);
-//				})
 				var argLength = arguments.length;
 				this.each(function(){
 					if(!this.$event_cache){
-						return ;
+						return this;
+					}else if(argLength===0){
+					for(var key in this.$event_cache){
+						this.$event_cache[key] = [];
 					}
-					else if(argLength === 0){
-						for (var key in this.$event_cache){
-							
-							this.$event_cache[key] = [];
-							
+				}else if(argLength===1){
+					
+					this.$event_cache[type] = [];
+					
+				}else{
+					for(var i = this.$event_cache[type].length-1;i>=0;i--){
+						if(this.$event_cache[type][i]===fn){
+							this.$event_cache[type].splice(i,1)
 						}
 					}
-					else if(argLength === 1){
-						this.$event_cache[type] = [];
-					}else if(argLength >= 2){
-						for(var i= this.$event_cache[type].length-1 ; i>=0;i--){
-							if(this.$event_cache[type][i]===fn){
-								this.$event_cache[type].splice(i,1)
-							}
-						}
-					}
+				}
 				})
-				
-				
 				return this;
+				
 			}
-
 		})
-
+		   var events = ("blur focus focusin focusout load resize scroll unload click dblclick " +
+                "mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
+                "change select submit keydown keypress keyup error contextmenu").split(' ');
+              
+			jQuery.each(events,function(i,val){
+				$.fn[val]=function(fn){
+					return this.on(val,fn)
+				}
+			})
 		//		$("span").empty()
 		//		console.log($("div"))
 		//		console.log($("div").html())
@@ -412,20 +568,110 @@
 		//		console.log($('b').appendTo( $('sp') ))
 		//		console.log($('b').append("gfdsg"));
 		//		$('a').append($("b"))
-		$("b").on("click",function(){
-			console.log(1)
-		}).on("click",function(){
-			console.log(2)
-		}).on("click",function(){
-			console.log(3)
-		}).on("click",function(){
-			console.log(4)
-		}).on("mouseout",function(){
-			console.log("jinlail")
+		//		$('span').prepend( 'a<span>内嵌span</span>' )
+		//		$("a").attr({"a":"n","c":"b"})
+		//		console.log($("a").attr({"a":"n","c":"b"}).attr("c"));
+		//		$("span").css({
+		//			"display": "block",
+		//			"background": "green",
+		//			"padding": "30px"
+		//		})
+		//		$("input").val("123")
+		//		console.log($("input").val())
+		//		console.log($("b").hasClass("b"))
+		//		console.log($("b").hasClass("aaa"))
+		//			$("a").addClass("b a c ").addClass(" b c d ")
+		//		$("a").removeClass("b")
+//		function go() {
+//			$("a").toggleClass("e f")
+//			console.log($("a").toggleClass("e f").hasClass("kkk"))
+//		}
+//		$("b").on("click",function(){
+//			console.log(1)
+//		}).on("mouseout",function(){
+//			console.log("heihei")
+//		})
+//		setTimeout(function(){
+//			$("b").off()
+//		},3000)
+
+	</script>
+	<script>
+		//ajax
+		$.extend({
+			ajaxSettings:{
+				url: location.href,    // 默认的url为本地地址
+                type: "GET",           // 默认请求的方法为GET
+                async: true,           // 默认为异步请求
+                contentType: "application/x-www-form-urlencoded; charset=UTF-8", // POST发送数据时设置头信息时候要使用
+                timeout: null,         // 默认不看延迟事件
+                success: function(){},
+                error: function(){},
+                complete: function(){},
+			},
+			urlString:function(data){
+				var result ,key;
+				result = "";
+				if(!jQuery.isObj(data)){
+					return result;
+				}
+				for(key in data){
+					//给万恶的IE兼容
+					result +=window.encodeURIComponent(key) + "=" +window.encodeURIComponent(data[key])+"&"; 
+				}
+				return result.slice(0,-1)
+			},
+			ajax:function(options){
+				var nowdate = {};
+				jQuery.extend(nowdate,$.ajaxSettings,options);
+				var xml = new XMLHttpRequest();
+				nowdate.data = $.urlString(nowdate.data);
+				nowdate.type = nowdate.type.toUpperCase();
+				if(nowdate.type === "GET"){
+					xml.open('GET',nowdate.url+'?'+nowdate.data);
+					xml.send();
+				}else if(nowdate.type === "POST"){
+//					console.log(nowdate.url)
+					xml.open('POST',nowdate.url);
+//					xml.setRequestHeader('Content-Type', nowdate.contentType);
+					xml.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+					console.log(nowdate.data);
+					xml.send(nowdate.data);
+				}
+				xml.onreadystatechange = function(){
+					  if( xml.readyState === 4 ) {
+                        nowdate.complete();
+
+                        // 判断请求是否成功，成功过就执行successs方法，失败执行error方法
+                        if( ( xml.status >= 200 && xml.status < 300 ) || xml.status === 304 ) {
+                            nowdate.success( xml.responseText );
+                        }else {
+                            nowdate.error( xml.status );
+                        }
+                    }
+				}
+			}
+		});
+		$.ajax({
+			url:"./heihei.json",
+			success:function(data){
+				console.log("over");
+				console.log(data);
+			},
+			error:function(){
+				console.log("fanche")
+			},
+			complete:function(){
+				console.log("ok")
+			},
+//			type:"POST",
+			data:{
+				"two":"2",
+				"noe":1,
+				"name":"s我沙发上"
+			}
+			
 		})
-		setTimeout(function(){
-			$("b").off("mouseout")
-		},3000)
 	</script>
 
 </html>
