@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+		<title>Document</title>
+		<script>
+			//沙盒模式
+			(function(w) {
+				var version = "1.0.0";
+				//定义主要jq函数
+				function jQuery(selector) {
+					//新建一个构造函数，jq就建在了构造函数的一个属性上
+					//用这个返回生成一个实例，外面用的时候就不用每次都new;
+					return new jQuery.fn.init(selector);
+				}
+				// 把jq.prototype简写一下
+				jQuery.fn = jQuery.prototype = {
+					constructor: jQuery,
+					jquery: version,
+					selector: "",
+					length: 0,
+					toArray: function() {
+						//伪数组转换为数组方法
+						return [].slice.call(this)
+					},
+					get: function(i) {
+						//if(i == null){
+						//return this.toArray();
+						//}else if( i>=0){
+						//	return this[i];
+						//}else{
+						//return this[this.length+i];
+						//}
+						return i == null ? this.toArray() : (i >= 0 ? this[i] : this[this.length + i])
+					},
+					each: function(fn) {
+						return jQuery.each(this, fn);
+					},
+					map: function(fn) {
+						return jQuery.map(this, fn);
+					},
+					eq: function(i) {
+						//if(i==null){
+						//return jQuery();
+						//}
+						//return i>=0?jQuery(this[i]):jQuery(this[this.length+i]);
+						return i == null ? jQuery() : jQuery(this.get(i));
+					},
+					first: function() {
+						return this.eq(0);
+					},
+					last: function() {
+						return this.eq(-1);
+					},
+					push: [].push,
+					sort: [].sort,
+					splice: [].splice
+
+				}
+				//给构造函数和原型链增加extend方法，用于增加方法
+				jQuery.extend = jQuery.fn.extend = function(obj) {
+					for(var key in obj) {
+						this[key] = obj[key];
+					}
+				}
+				//给jq构造函数的属性
+				jQuery.extend({
+					//这里的方法jq可以直接使用
+					//传到原型链上的直接把对象传为this,就少传一个参数,其实也可以不用传。原型链就可以用了
+					each: function(obj, fn) {
+						var i, l, key;
+						if("length" in obj) {
+							for(i = 0, l = obj.length; i < l; i++) {
+								if(fn.call(obj[i], i, obj[i]) === false) {
+									break;
+								}
+								//fn(i,obj[i])
+							}
+						} else {
+							for(key in obj) {
+								if(fn.call(obj[key], key, obj[key]) === false) {
+									break;
+								}
+							}
+						}
+						return obj;
+					},
+					map: function(obj, fn) {
+						var i, l, key;
+						var result = [];
+						if("length" in obj) {
+							for(i = 0, l = obj.length; i < l; i++) {
+								result.push(fn.call(obj[i], i, obj[i]))
+							}
+						} else {
+							for(key in obj) {
+								result.push(fn.call(obj[key], key, obj[key]))
+							}
+						}
+						return result;
+
+					},
+					slice: function() {
+						return jQuery([].slice.apply(this, arguments))
+					},
+
+					isHtml: function(val) {
+						if(!val) {
+							return false;
+						}
+						if(val.charAt(0) === "<" &&
+							val.charAt(val.length - 1) === '>' &&
+							val.length >= 3) {
+							return true;
+						}
+						return false;
+					},
+					isFunction: function(val) {
+						return typeof val === "function";
+					},
+					isString: function(val) {
+						return typeof val === "string";
+					},
+					isObj: function(val) {
+						if(!val) {
+							return false;
+						}
+						if(typeof val === "object" || typeof val === "function") {
+							return true;
+						}
+						return false;
+					},
+
+					isArray: function(val) {
+						if(jQuery.isFunction(val) || !jQuery.isObj(val) || jQuery.isWindow(val)) {
+							return false;
+						}
+						if(({}).toString.call(val) === "[object Array]") {
+							return true;
+						}
+						if("length" in val && (val.length === 0 || val.length - 1 in val)) {
+							return true;
+						}
+						return false;
+					},
+					isWindow: function(val) {
+						if(!val) {
+							return false;
+						}
+						return val.window == val ? true : false;
+					},
+					ready: function(val) {
+						if(document.readyState == "complete") {
+							val();
+						} else if(document.addEventListener) {
+							document.addEventListener("DOMContentLoaded", val)
+						} else {
+							document.attachEvent("onreadystatechange", function() {
+								if(document.readyState == "complete") {
+									val();
+								}
+							})
+						}
+
+					},
+					getStyle: function(dom, style) {
+						if(window.getComputedStyle) {
+							return window.getComputedStyle(dom)[style];
+						} else {
+							return dom.currentStyle[style];
+						}
+					},
+					trim: function(str) {
+						if(!str) {
+							return str;
+						}
+						if(str.trim) {
+							return str.trim();
+						}
+						return str.replace(/^\s+|\s+$/g, "")
+					},
+					addEvent:function(ele,type,fn){
+						if( !ele.nodeType || !jQuery.isString( type ) || !jQuery.isFunction( fn ) ) {
+                    return;
+                }
+						if(ele.addEventListener){
+							ele.addEventListener(type,fn)
+						}else{
+							ele.attachEvent("on"+type,fn)
+						}
+					},
+					removeEvent:function(){
+						if(ele.removeEventListener){
+							ele.removeEventListener(type,fn)
+						}else{
+							ele.detachEvent("on"+type,fn)
+						}
+					}
+
+				})
+				var init = jQuery.fn.init = function(selector) {
+					if(!selector) {
+						return this;
+					};
+					if(jQuery.isString(selector)) {
+						if(jQuery.isHtml(selector)) {
+							var div = document.createElement("div");
+							div.innerHTML = selector;
+							[].push.apply(this, div.childNodes);
+						} else {
+
+							try {
+								[].push.apply(this, document.querySelectorAll(selector));
+							} catch(e) {
+								// 如果报错了，那么手动补一个length属性，代表没有获取到任何元素
+								this.length = 0;
+							}
+							//[].push.apply(this, document.querySelectorAll(selector));
+						}
+					} else if(jQuery.isArray(selector)) {
+						[].push.apply(this, [].slice.call(selector))
+					} else if(jQuery.isFunction(selector)) {
+						jQuery.ready(selector)
+					} else {
+						this[0] = selector;
+						this.length = 1;
+					}
+				}
+				init.prototype = jQuery.fn;
+				w.$ = w.jQuery = jQuery;
+			}(window))
+		</script>
+		<script>
+			$(function() {
+				//console.log($("a").toArray())
+			})
+		</script>
+	</head>
+
+	<body>
+		<a href="" class="a b e ">1</a>
+		<a href="" class="b a kkk">2</a>
+		<a href="">3</a>
+		<a href="">4</a>
+		<span>123</span>
+		<div>
+			<a href="">1
+				<span>2</span>
+			</a>
+		</div>
+		<div>
+			<button onclick="go()">dian</button>
+		</div>
+		<div></div>
+		<b>1</b>
+		<b class="aaa">2</b>
+		<sp></sp>
+		<input type="text" value="1" />
+	</body>
+	<!--DOM方法-->
+	<script>
+		$.fn.extend({
+			//清空所选元素的内容，包括子元素的内容。元素还保留着。
+			empty: function() {
+				this.each(function(i, val) {
+					//val.innerHTML = "";
+					this.innerHTML = "";
+
+				})
+				return this;
+			},
+			//删除这个元素及其所有子元素
+			remove: function() {
+				this.each(function(i, val) {
+					val.parentNode.removeChild(val)
+				});
+				return this;
+			},
+			//没传参就是获取第一个元素的内容，传参就是设置每一个元素的innerHTML=参数
+			html: function(html) {
+				if(arguments.length === 0) {
+					return this[0].innerHTML;
+				} else if(arguments.length >= 1) {
+					this.each(function(i, val) {
+						//val.innerHTML = html;
+						this.innerHTML = html;
+					})
+				}
+				return this;
+			},
+			text: function(html) {
+				var result = "";
+				if(arguments.length === 0) {
+					this.each(function() {
+						result += this.innerText;
+					});
+					return result;
+				} else if(arguments.length >= 1) {
+					this.each(function() {
+						this.innerText = html;
+
+					})
+				}
+				return this;
+			},
+			//把所选元素增加到指点元素
+			appendTo: function(selector) {
+				//返回一个数组，里面包括增加的元素
+				var result = [],
+					temp = "";
+				//把元素包装成jq的元素，统一处理
+				var Selector = jQuery(selector);
+				//console.log(this) this构造函数，谁调用是谁
+				this.each(function() {
+					var _this = this;
+					//console.log(this)  this相当于val 是遍历每一项的值
+					Selector.each(function(i) {
+						if(i === 0) {
+							temp = _this;
+
+						} else {
+							temp = _this.cloneNode(true);
+						}
+
+						this.appendChild(temp);
+						result.push(temp);
+					})
+
+				})
+				return jQuery(result);
+			},
+			//把元素增加到指定元素的前面
+			prependTo: function(selector) {
+				var result = [],
+					temp = "";
+				var Selector = jQuery(selector);
+				this.each(function() {
+					var _this = this;
+					Selector.each(function(i) {
+						temp = i === 0 ? _this : _this.cloneNode(true);
+						this.insertBefore(temp, this.firstChild);
+						result.push(temp);
+					})
+
+				})
+				return jQuery(result);
+			},
+			// 给所有元素添加html内容，或者其他元素
+			append: function(html) {
+				var $html = jQuery(html);
+				if(jQuery.isString(html)) {
+					this.each(function() {
+						this.innerHTML += html;
+					})
+				} else {
+					$html.appendTo(this)
+				}
+				return this;
+			},
+			//给所有元素前面添加html内容，或者其他元素
+			prepend: function(selector) {
+				var Selector = jQuery(selector);
+				if(jQuery.isString(selector)) {
+					this.each(function() {
+						this.innerHTML = selector + this.innerHTML;
+					})
+				} else {
+					Selector.prependTo(this);
+				}
+				return this;
+			},
+			//穿一个参数就返回这个参数的属性值，传两个和对象就设置这个属性节点
+			attr: function(attr, val) {
+				if(!jQuery.isObj(attr) && !jQuery.isString(attr)) {
+					return this;
+				} else if(jQuery.isString(attr)) {
+					if(arguments.length === 1) {
+						return this[0].getAttribute(attr);
+					} else {
+						this.each(function() {
+							this.setAttribute(attr, val);
+						})
+					}
+				} else if(jQuery.isObj(attr)) {
+					this.each(function() {
+						var _this = this;
+						jQuery.each(attr, function(i, key) {
+							_this.setAttribute(i, key)
+						})
+					})
+				}
+				return this;
+			},
+			//设置DOM元素的属性值
+			prop: function(attr, val) {
+				if(!jQuery.isObj(attr) && !jQuery.isString(attr)) {
+					return this;
+				} else if(jQuery.isString(attr)) {
+					if(arguments.length === 1) {
+						return this[0][attr];
+					} else {
+						this.each(function() {
+							this[attr] = val;
+						})
+					}
+				} else if(jQuery.isObj(attr)) {
+					this.each(function() {
+						var _this = this;
+						jQuery.each(attr, function(i, key) {
+							_this[i] = key
+						})
+					})
+				}
+				return this;
+			},
+			//一个参数，就返回参数的css值，两个和对象就设置css
+			css: function(attr, val) {
+				if(arguments.length === 1) {
+					if(jQuery.isString(attr)) {
+						return jQuery.getStyle(this[0], attr)
+					} else if(jQuery.isObj(attr)) {
+						this.each(function() {
+							var _this = this;
+							jQuery.each(attr, function(i, val1) {
+								_this.style[i] = val1;
+							})
+						})
+
+					}
+				} else if(arguments.length >= 2) {
+					this.each(function() {
+						this.style[attr] = val;
+					})
+				}
+				return this;
+			},
+			//一个参数就返回这个值，两个和对象就设置
+			val: function(val) {
+				if(arguments.length === 0) {
+					return this.prop("value")
+				} else {
+					return this.prop("value", val)
+				}
+			},
+			hasClass: function(val) {
+				var booltrue = false;
+				this.each(function() {
+					if((" " + this.className + " ").indexOf(" " + val + " ") > -1) {
+						booltrue = true;
+						return false;
+					}
+				})
+				return booltrue;
+			},
+			addClass: function(val) {
+				//				this.each(function(){
+				//					if(!jQuery(this).hasClass(val)){
+				//						this.className += " " + val;
+				//					}
+				//					
+				//				})
+				val = jQuery.trim(val).split(" ");
+				this.each(function() {
+					var _this = jQuery(this);
+					jQuery.each(val, function(i, vval) {
+						if(!_this.hasClass(vval)) {
+							_this[0].className += " " + val;
+						}
+					})
+				})
+				return this;
+			},
+			removeClass: function(val) {
+				if(arguments.length === 0) {
+					this.each(function() {
+						this.className = "";
+					})
+				} else {
+					val = jQuery.trim(val).split(" ");
+					this.each(function() {
+						var _this = this;
+						jQuery.each(val, function(i, vval) {
+//							_this.className = (" " + _this.className + " ").replace(" " + vval + " ", " ");
+							_this.className = _this.className.replace(new RegExp("\\b" + vval + "\\b"), "");
+							
+						})
+					})
+
+				}
+
+				return this;
+			},
+			toggleClass: function(val) {
+				
+					// 这里的this是遍历到的每一个原生DOM，
+					// 先包装成JQ对象，就可以复用之前写好的方法了
+					val = jQuery.trim(val).split(" ");
+					this.each(function() {
+						var _this = jQuery(this);
+						jQuery.each(val, function(i,vval) {
+							if(_this.hasClass(vval)) {
+								_this.removeClass(vval);
+							} else {
+								_this.addClass(vval);
+							}
+						})
+
+					});
+
+				
+				return this;
+			},
+			on:function(type,fn){
+				
+				this.each(function(){
+					this.$event_cache = this.$event_cache || {};
+					var _this = this;
+					if(!this.$event_cache[type]){
+					
+					this.$event_cache[type] = [];
+					this.$event_cache[type].push(fn);
+					jQuery.addEvent(this,type,function(e){
+						jQuery.each(_this.$event_cache[type],function(){
+							this.call(_this,e)
+						})
+					})
+				}else{
+					this.$event_cache[type].push(fn);
+				}
+				})
+				return this;
+			},
+			off:function(type,fn){
+				var argLength = arguments.length;
+				this.each(function(){
+					if(!this.$event_cache){
+						return this;
+					}else if(argLength===0){
+					for(var key in this.$event_cache){
+						this.$event_cache[key] = [];
+					}
+				}else if(argLength===1){
+					
+					this.$event_cache[type] = [];
+					
+				}else{
+					for(var i = this.$event_cache[type].length-1;i>=0;i--){
+						if(this.$event_cache[type][i]===fn){
+							this.$event_cache[type].splice(i,1)
+						}
+					}
+				}
+				})
+				return this;
+				
+			}
+
+		})
+		 var events = "blur focus focusin focusout load resize scroll unload click dblclick " +
+                "mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
+                "change select submit keydown keypress keyup error contextmenu".split(' ');
+			jQuery.each(events,function(i,val){
+				$.fn[val]=function(fn){
+					return $.fn.on(val,fn)
+				}
+			})
+
+		//		$("span").empty()
+		//		console.log($("div"))
+		//		console.log($("div").html())
+		//		console.log($("a").text("a123"))
+		//		$("<h3>3<h3>").appendTo($("div"))
+		//		console.log($('b').appendTo( $('sp') ))
+		//		console.log($('b').append("gfdsg"));
+		//		$('a').append($("b"))
+		//		$('span').prepend( 'a<span>内嵌span</span>' )
+		//		$("a").attr({"a":"n","c":"b"})
+		//		console.log($("a").attr({"a":"n","c":"b"}).attr("c"));
+		//		$("span").css({
+		//			"display": "block",
+		//			"background": "green",
+		//			"padding": "30px"
+		//		})
+		//		$("input").val("123")
+		//		console.log($("input").val())
+		//		console.log($("b").hasClass("b"))
+		//		console.log($("b").hasClass("aaa"))
+		//			$("a").addClass("b a c ").addClass(" b c d ")
+		//		$("a").removeClass("b")
+//		function go() {
+//			$("a").toggleClass("e f")
+//			console.log($("a").toggleClass("e f").hasClass("kkk"))
+//		}
+//		$("b").on("click",function(){
+//			console.log(1)
+//		}).on("mouseout",function(){
+//			console.log("heihei")
+//		})
+//		setTimeout(function(){
+//			$("b").off()
+//		},3000)
+$("b").dblclick(function(){
+	console.log(2)
+})
+	</script>
+
+</html>
