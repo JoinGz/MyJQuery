@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+	<title>Document</title>
+</head>
+<body>
+	<div id="ok">123</div>
+	<a href="" class="p"></a>
+	<a href="" class="p"></a>
+	<a href="" class="p"></a>
+	<button>1</button>
+	<button>2</button>
+	<button>3</button>
+</body>
+<script>
+	(function(w){
+		w.jquery = w.$ = function jquery(selector){
+			return new init(selector);
+		}
+		function init(selector){
+			if($.isString(selector)){
+				if($.isHtml(selector)){
+					var div = document.createElement("div");
+					div.innerHTML = selector;
+					[].push.apply(this,div.childNodes);
+				}else{
+					[].push.apply(this,document.querySelectorAll(selector));
+				}
+				
+			}else if($.isArray(selector)){
+				[].push.apply(this,[].slice.call(selector))
+			}else if($.isFunction(selector)){
+				selector();
+			}
+		}
+		init.prototype = jquery.prototype;
+		init.prototype.constructor = init;
+		$.extend = jquery.prototype.extend = function(obj){
+			for (var k in obj){
+				this[k] = obj[k];
+			}
+		}
+		$.extend({
+			isString:function(selector){
+				return Object.prototype.toString.call(selector)==='[object String]';
+			},
+			isArray:function(selector){
+				if($.isFunction(selector)||$.isObj(selector)){
+					return false;
+				}
+				if(Object.prototype.toString.call(selector)==='[object Array]') {
+					return true;
+				}else if("length" in selector && (length === 0 || length-1 in selector)){
+					//伪数组 ， 又length属性，length=0或者selector里有东西
+					return true;
+				}
+				return false;
+			},
+			isFunction:function(selector){
+				return Object.prototype.toString.call(selector)==='[object Function]';
+			},
+			isObj:function(selector){
+				if($.isFunction(selector)){
+					return true;
+				}
+				return Object.prototype.toString.call(selector)==='[object Object]';
+			},
+			isWindow:function(selector){
+				//是空程序报错
+				if(!selector){
+					return false;
+				}
+				return selector.window === selector ? true:false;
+			},
+			isHtml:function(selector){
+				if($.isString(selector)){
+					var reg = /^<\D+>$/;
+					if(reg.test(selector)){
+						return true;
+					}
+				}
+				return false;
+			},
+			isReady:function(val){
+				if(document.addEventListener){
+					document.addEventListener("DOMContentLoaded",val)
+				}else if(document.readyState=="complete"){
+					val();
+				}else{
+					document.attachEvent("onreadystatechange",function(){
+						if(document.readyState=="complete"){
+							val();
+						}
+					})
+				}
+			}
+		})
+		jquery.prototype.extend({
+			
+		})
+	})(window)
+</script>
+<script>
+	
+</script>
+</html>

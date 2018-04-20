@@ -58,13 +58,23 @@
 					push: [].push,
 					sort: [].sort,
 					splice: [].splice
-
 				}
 				//给构造函数和原型链增加extend方法，用于增加方法
-				jQuery.extend = jQuery.fn.extend = function(obj) {
-					for(var key in obj) {
-						this[key] = obj[key];
+				jQuery.extend = jQuery.fn.extend = function() {
+					if(arguments.length === 1){
+						for(var key in arguments[0]) {
+							this[key] = arguments[0][key];
+						}
+						return this;
+					}else if(arguments.length >= 2){
+						for (var i = 1,len = arguments.length;i<len;i++){
+							for(var key in arguments[i]){
+								arguments[0][key] = arguments[i][key]
+							}
+						}
+						return arguments[0];
 					}
+					
 				}
 				//给jq构造函数的属性
 				jQuery.extend({
@@ -101,12 +111,10 @@
 							}
 						}
 						return result;
-
 					},
 					slice: function() {
 						return jQuery([].slice.apply(this, arguments))
 					},
-
 					isHtml: function(val) {
 						if(!val) {
 							return false;
@@ -133,7 +141,6 @@
 						}
 						return false;
 					},
-
 					isArray: function(val) {
 						if(jQuery.isFunction(val) || !jQuery.isObj(val) || jQuery.isWindow(val)) {
 							return false;
@@ -164,7 +171,6 @@
 								}
 							})
 						}
-
 					},
 					getStyle: function(dom, style) {
 						if(window.getComputedStyle) {
@@ -199,7 +205,6 @@
 							ele.detachEvent("on"+type,fn)
 						}
 					}
-
 				})
 				var init = jQuery.fn.init = function(selector) {
 					if(!selector) {
@@ -211,7 +216,6 @@
 							div.innerHTML = selector;
 							[].push.apply(this, div.childNodes);
 						} else {
-
 							try {
 								[].push.apply(this, document.querySelectorAll(selector));
 							} catch(e) {
@@ -268,7 +272,6 @@
 				this.each(function(i, val) {
 					//val.innerHTML = "";
 					this.innerHTML = "";
-
 				})
 				return this;
 			},
@@ -301,7 +304,6 @@
 				} else if(arguments.length >= 1) {
 					this.each(function() {
 						this.innerText = html;
-
 					})
 				}
 				return this;
@@ -320,15 +322,12 @@
 					Selector.each(function(i) {
 						if(i === 0) {
 							temp = _this;
-
 						} else {
 							temp = _this.cloneNode(true);
 						}
-
 						this.appendChild(temp);
 						result.push(temp);
 					})
-
 				})
 				return jQuery(result);
 			},
@@ -344,7 +343,6 @@
 						this.insertBefore(temp, this.firstChild);
 						result.push(temp);
 					})
-
 				})
 				return jQuery(result);
 			},
@@ -428,7 +426,6 @@
 								_this.style[i] = val1;
 							})
 						})
-
 					}
 				} else if(arguments.length >= 2) {
 					this.each(function() {
@@ -488,9 +485,7 @@
 							
 						})
 					})
-
 				}
-
 				return this;
 			},
 			toggleClass: function(val) {
@@ -507,9 +502,7 @@
 								_this.addClass(vval);
 							}
 						})
-
 					});
-
 				
 				return this;
 			},
@@ -557,17 +550,16 @@
 				return this;
 				
 			}
-
 		})
-		 var events = "blur focus focusin focusout load resize scroll unload click dblclick " +
+		   var events = ("blur focus focusin focusout load resize scroll unload click dblclick " +
                 "mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
-                "change select submit keydown keypress keyup error contextmenu".split(' ');
+                "change select submit keydown keypress keyup error contextmenu").split(' ');
+              
 			jQuery.each(events,function(i,val){
 				$.fn[val]=function(fn){
-					return $.fn.on(val,fn)
+					return this.on(val,fn)
 				}
 			})
-
 		//		$("span").empty()
 		//		console.log($("div"))
 		//		console.log($("div").html())
@@ -602,9 +594,162 @@
 //		setTimeout(function(){
 //			$("b").off()
 //		},3000)
-$("b").dblclick(function(){
-	console.log(2)
-})
+	</script>
+	<script>
+		//ajax
+		$.extend({
+			ajaxSettings:{
+				url: location.href,    // 默认的url为本地地址
+                type: "GET",           // 默认请求的方法为GET
+                async: true,           // 默认为异步请求
+                dataType:"JSON",
+                contentType: "application/x-www-form-urlencoded; charset=UTF-8", // POST发送数据时设置头信息时候要使用
+                timeout: null,         // 默认不看延迟事件
+                success: function(){},
+                error: function(){},
+                complete: function(){},
+			},
+			urlString:function(data){
+				var result ,key;
+				result = "";
+				if(!jQuery.isObj(data)){
+					return result;
+				}
+				for(key in data){
+					//给万恶的IE兼容
+					result +=window.encodeURIComponent(key) + "=" +window.encodeURIComponent(data[key])+"&"; 
+				}
+				return result.slice(0,-1)
+			},
+			ajax:function(options){
+				var nowdate = {},timer;
+				jQuery.extend(nowdate,$.ajaxSettings,options);
+				var xml = new XMLHttpRequest();
+				nowdate.data = $.urlString(nowdate.data);
+				nowdate.type = nowdate.type.toUpperCase();
+				if(nowdate.type === "GET"){
+					xml.open('GET',nowdate.url+'?'+nowdate.data);
+					xml.send();
+				}else if(nowdate.type === "POST"){
+//					console.log(nowdate.url)
+					xml.open('POST',nowdate.url);
+					xml.setRequestHeader('Content-Type', nowdate.contentType);
+//					xml.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+//					console.log(nowdate.data);
+					xml.send(nowdate.data);
+				}
+				xml.onreadystatechange = function(){
+					  if( xml.readyState === 4 ) {
+					  	clearInterval(timer);
+                        nowdate.complete();
+                        // 判断请求是否成功，成功过就执行successs方法，失败执行error方法
+                        if( ( xml.status >= 200 && xml.status < 300 ) || xml.status === 304 ) {
+                        	var result;
+                        	switch(nowdate.dataType){
+                        		case "JSON" :
+                        		result = JSON.parse(xml.responseText);
+                        		break;
+                        		case "script":
+                        		eval(xml.responseText);
+                        		result = xml.responseText;
+                        		break;
+                        		case "style":
+                        		$("<style></style>").html(xml.responseText).appendTo("head");
+                        		result = xml.responseText;
+                        		break;
+                        		default:
+                        		result = xml.responseText;
+                        		break;
+                        	}
+                            nowdate.success(result);
+                        }else {
+                            nowdate.error( xml.status );
+                        }
+                    }
+				}
+				if(nowdate.timeout){
+					timer = setTimeout(function(){
+						xml.onreadystatechange=null;
+						nowdate.error( "超时" );
+					},nowdate.timeout)
+				}
+				
+			},
+			get:function(url,data,fn){
+				var fn = fn || data||function(){};
+				$.ajax({
+					url:url,
+					data:data,
+					success:fn
+				})
+			},
+			post:function(url,data,fn){
+				var fn = fn || data||function(){};
+				$.ajax({
+					url:url,
+					data:data,
+					type:"POST",
+					success:fn
+				})
+			},
+			getCssFile:function(url,data,fn){
+				var fn = fn || data||function(){};
+				$.ajax({
+					url:url,
+					data:data,
+					success:fn,
+					dataType: 'style'
+				})
+			},
+			getScript:function(url,data,fn){
+				var fn = fn || data||function(){};
+				$.ajax({
+					url:url,
+					data:data,
+					success:fn,
+					dataType: 'script'
+				})
+			},
+			getJson:function(url,data,fn){
+				var fn = fn || data||function(){};
+				$.ajax({
+					url:url,
+					data:data,
+					success:fn
+				})
+			}
+			
+			
+			
+			
+		});
+//		$.ajax({
+//			url:"./css.json",
+//			success:function(data){
+////				console.log("over");
+//				console.log(data);
+//			},
+//			error:function(msg){
+//				console.log(msg)
+//			},
+//			complete:function(){
+////				console.log("ok")
+//			},
+////			type:"POST",
+//			data:{
+//				"two":"2",
+//				"noe":1,
+//				"name":"s我沙发上"
+//			},
+//			dataType:"style",
+//			timeout:100
+//			
+//		})
+		
+		$.getScript("script.json",function(e){
+			console.log(e)
+		})
+		console.dir($("a"))
 	</script>
 
 </html>
