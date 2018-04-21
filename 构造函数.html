@@ -112,6 +112,7 @@
 						}
 						return result;
 					},
+					//BUG，slice应该写在原型对象上。
 					slice: function() {
 						return jQuery([].slice.apply(this, arguments))
 					},
@@ -239,7 +240,7 @@
 		</script>
 		<script>
 			$(function() {
-				//console.log($("a").toArray())
+			console.log($("a").slice(1))	
 			})
 		</script>
 	</head>
@@ -749,7 +750,7 @@
 		$.getScript("script.json",function(e){
 			console.log(e)
 		})
-		console.dir($("a"))
+		console.dir($())
 	</script>
 
 </html>

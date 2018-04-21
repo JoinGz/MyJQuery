@@ -7,48 +7,66 @@
 	<title>Document</title>
 </head>
 <body>
-	<div id="ok">123</div>
-	<a href="" class="p"></a>
-	<a href="" class="p"></a>
-	<a href="" class="p"></a>
-	<button>1</button>
-	<button>2</button>
-	<button>3</button>
+	<div id="ok">
+		<p>1111</p>
+	</div>
+	<a href="" class="p">1</a>
+		<a href="" class="p">2</a>
+		<a href="" class="p">3</a>
+		<button>1</button>
+		<button>2</button>
+		<button>3</button>
 </body>
 <script>
+	//1.创建JQ和JQ选择器方法封装。
 	(function(w){
 		w.jquery = w.$ = function jquery(selector){
-			return new init(selector);
+			return new Init(selector);
 		}
-		function init(selector){
+		function Init(selector){
+			if(!selector){
+				return this;
+			}
 			if($.isString(selector)){
 				if($.isHtml(selector)){
 					var div = document.createElement("div");
 					div.innerHTML = selector;
 					[].push.apply(this,div.childNodes);
 				}else{
-					[].push.apply(this,document.querySelectorAll(selector));
+					//避免用户乱传报错就写一个try
+					try{
+						[].push.apply(this,document.querySelectorAll(selector));
+					}catch(e){
+						this.length = 0;
+					}
+					
 				}
 				
 			}else if($.isArray(selector)){
-				[].push.apply(this,[].slice.call(selector))
+				[].push.apply(this,[].slice.call(selector));
 			}else if($.isFunction(selector)){
-				selector();
+				$.isReady(selector);
+			}else if($.isObj(selector)){
+				[].push.call(this,selector);
+			}else{
+				this[0] = selector;
+				this.length = 1;
 			}
 		}
-		init.prototype = jquery.prototype;
-		init.prototype.constructor = init;
+		Init.prototype = jquery.prototype;
+		Init.prototype.constructor = Init;
 		$.extend = jquery.prototype.extend = function(obj){
 			for (var k in obj){
 				this[k] = obj[k];
 			}
 		}
 		$.extend({
+			verson:"1.0.1",
 			isString:function(selector){
 				return Object.prototype.toString.call(selector)==='[object String]';
 			},
 			isArray:function(selector){
-				if($.isFunction(selector)||$.isObj(selector)){
+				if($.isFunction(selector)||!$.isObj(selector||$.isWindow(selector))){
 					return false;
 				}
 				if(Object.prototype.toString.call(selector)==='[object Array]') {
@@ -63,10 +81,17 @@
 				return Object.prototype.toString.call(selector)==='[object Function]';
 			},
 			isObj:function(selector){
+				if(!selector){
+					return false;
+				}
 				if($.isFunction(selector)){
 					return true;
 				}
-				return Object.prototype.toString.call(selector)==='[object Object]';
+//				return Object.prototype.toString.call(selector)==='[object Object]';
+				if(typeof selector == "object"){
+					return true;
+				}
+				return false;
 			},
 			isWindow:function(selector){
 				//是空程序报错
@@ -96,14 +121,162 @@
 						}
 					})
 				}
+			},
+			each:function(obj,fn){
+				var i,l,key;
+				if("length" in obj){ //遍历数组和伪数组
+					for(i=0,l=obj.length;i<l;i++){
+						//	注意this的值
+						if(fn.call(obj[i],i,obj[i])===false){
+							break;
+						}
+					}
+				}else{
+					for(key in obj){
+						if(fn.call(obj[key],key,obj[key])===false){
+							break;
+						}
+					}
+				}
+				return obj;
+			},
+			//返回用户返回的值，用JQ对象包装。
+			map:function(obj,fn){
+				var result=[],i,l,key;
+				if("length" in obj){
+					for(i=0,l=obj.length;i<l;i++){
+						result.push(fn.call(obj[i],i,obj[i]));
+					}
+				}else{
+					for (key in obj){
+						result.push(fn.call(obj[key],key,obj[key]));
+					}
+				}
+				return $(result);
 			}
 		})
 		jquery.prototype.extend({
+			each:function(fn){
+				return $.each(this,fn);
+			},
+			map:function(fn){
+				return $.map(this,fn);
+			},
+			toArray:function(){
+				return [].slice.call(this)
+			},
+			get:function(num){
+				return num==null? this.toArray():(num>=0?this[num]:this[this.length+num])
+			},
+			eq:function(num){
+				return num == null? $():$(this.get(num));
+			},
+			html:function(html){
+				if(arguments.length === 0){
+					return this[0].innerHTML;
+				}else{
+					this.each(function(){
+						this.innerHTML=html;
+					})
+					return this;
+				}
+				
+				
+			},
+			first:function(){
+				return this.eq(0);
+			},
+			last:function(){
+				return this.eq(-1);
+			},
+			push:[].push,//understand?
+			sort:[].sort,
+			splice:[].splice,
+			slice:function(){
+				return $([].slice.apply(this,arguments))
+			}
 			
 		})
 	})(window)
 </script>
 <script>
-	
+	//2.对DOM的操作，增删改查。
+	$.prototype.extend({
+		//使元素内容为空
+		empty:function(){
+			this.each(function(){
+				this.innerHTML ="";
+			})
+			return this;
+		},
+		//删除这个元素及其子元素
+		remove:function(){
+			this.each(function(){
+				this.parentNode.removeChild(this);
+			})
+			return this;
+		},
+		text:function(text){
+			
+			if(arguments.length === 0){
+				var result = "";
+				this.each(function(i,val){
+					result += this.innerText ;
+				})
+				return result;
+			}else{
+				this.each(function(){
+					this.innerText = text;
+				})
+				return this;
+			}
+		},
+		appendTo:function(selector){
+			//JQ返回的是增加的元素
+			//appendChild会移动元素，要用克隆
+			var result = [],temp = null;
+			selector = $(selector);
+			this.each(function(){
+				var _this = this;
+				$.each(selector, function(i,val) {
+					//有点问题？
+					temp = _this.cloneNode(true);
+					this.appendChild(temp);
+					result.push(temp);
+				});
+			})
+			temp = null;
+			return $(result);
+		},
+		prependTo:function(selector){
+			selector = $(selector);
+			var result = [],temp = null;
+			this.each(function(){
+				_this = this;
+				$.each(selector, function() {
+					temp = _this.cloneNode(true);
+					this.insertBefore(temp,this.firstChild);
+					result.push(temp);
+				});
+			})
+			return $(result);
+		},
+		append:function(html){
+			if($.isString(html)){
+				this.each(function(){
+					this.innerHTML += html;
+				})
+			}else{
+				$(html).appendTo(this);
+			}
+		}
+	})
+
+</script>
+<script>
+	function x(a){
+		console.log(a)
+	}
+	x($($("a")));
 </script>
 </html>
