@@ -12,7 +12,7 @@
 		<div id="ok">
 			<p>1111</p>
 		</div>
-		<a href="" class="p">1</a>
+		<a href="" class=" p   p1   p100  ">1</a>
 		<a href="" class="p">2</a>
 		<a href="" class="p">3</a>
 		<button>1</button>
@@ -158,13 +158,24 @@
 					}
 					return $(result);
 				},
-				getStyle:function(ele,style){
-					if(window.getComputedStyle){
+				getStyle: function(ele, style) {
+					if(window.getComputedStyle) {
 						return window.getComputedStyle(ele)[style];
-					}else {
+					} else {
 						return ele.currentStyle[style];
 					}
+				},
+				trim: function(string) {
+				if(!string) {
+					return this;
 				}
+				if(string.trim) {
+					return string.trim();
+				} else {
+					var reg = /^\s+|\s+$/g;
+					return string.replace(reg, "");
+				}
+			}
 			})
 			jquery.prototype.extend({
 				each: function(fn) {
@@ -205,6 +216,7 @@
 				slice: function() {
 					return $([].slice.apply(this, arguments))
 				}
+				
 
 			})
 		})(window)
@@ -304,80 +316,165 @@
 						})
 					}
 
-				}else if($.isObj(attr)){
-					this.each(function(){
+				} else if($.isObj(attr)) {
+					this.each(function() {
 						var _this = this;
-						for(var key in attr){
-							_this.setAttribute(key,attr[key]);
+						for(var key in attr) {
+							_this.setAttribute(key, attr[key]);
 						}
 					})
-					
+
 				}
 				return this;
 			},
-			prop:function(property,value){
-				if(!$.isString(property) && !$.isObj(property)){
+			prop: function(property, value) {
+				if(!$.isString(property) && !$.isObj(property)) {
 					return this;
-				}else if($.isString(property)){
+				} else if($.isString(property)) {
 					//经常忘记写length
-					if(arguments.length === 1){
+					if(arguments.length === 1) {
 						return this[0][property];
-					}else{
-						this.each(function(){
+					} else {
+						this.each(function() {
 							this[property] = value;
 						})
 					}
-				}else if($.isObj(property)){
-					this.each(function(){
+				} else if($.isObj(property)) {
+					this.each(function() {
 						var _this = this;
-						for(var key in property){
+						for(var key in property) {
 							_this[key] = property[key];
 						}
 					})
 				}
 				return this;
+			}
+			
+		})
+		jquery.prototype.extend({
+			each: function(fn) {
+				return $.each(this, fn);
 			},
-			css:function(css,style){
-				if(!$.isString(css) && !$.isObj(css)){
+			map: function(fn) {
+				return $.map(this, fn);
+			},
+			toArray: function() {
+				return [].slice.call(this)
+			},
+			get: function(num) {
+				return num == null ? this.toArray() : (num >= 0 ? this[num] : this[this.length + num])
+			},
+			eq: function(num) {
+				return num == null ? $() : $(this.get(num));
+			},
+			css: function(css, style) {
+				if(!$.isString(css) && !$.isObj(css)) {
 					return this;
-				}else if($.isString(css)){
+				} else if($.isString(css)) {
 					//经常忘记写length
-					if(arguments.length === 1){
-						
-						return $.getStyle(this[0],css);
-					}else{
-						this.each(function(){
+					if(arguments.length === 1) {
+
+						return $.getStyle(this[0], css);
+					} else {
+						this.each(function() {
 							this.style[css] = style;
 						})
 					}
-				}else if($.isObj(css)){
-					this.each(function(){
+				} else if($.isObj(css)) {
+					this.each(function() {
 						var _this = this;
-						for(var key in css){
+						for(var key in css) {
 							_this.style[key] = css[key];
 						}
 					})
 				}
 				return this;
 			},
-			val:function(val){
-				if(arguments.length===0){
+			val: function(val) {
+				if(arguments.length === 0) {
 					return this.prop(val);
-				}else{
-					return this.prop("value",val)
+				} else {
+					return this.prop("value", val)
 				}
 			},
-			hasClass:function(){
-				
+			hasClass: function(cla) {
+				if(!$.isString(cla)) {
+					return this;
+				} else {
+					//传入的要判断的className
+					var hascal = cla;
+					hascal = $.trim(cla);
+					hascal = hascal.replace(/\s+/g, " ");
+					hascal = hascal.split(" ");
+					//这个元素本身有的className
+					var y = this[0].className;
+					cla = $.trim(y);
+					cla = cla.replace(/\s+/g, " ")
+					cla = cla.split(" ");
+					var x; //通过一个变量判断一个数组中时候包含另外一个数组
+					$.each(hascal, function(i, val) { //遍历传入的
+						x = false; // 每次开始都是false
+						var fatherval = val;
+						$.each(cla, function(i, val) {
+							if(val == fatherval) { //对比时候相等
+								x = true; //相等赋值x
+								return false; //跳出此次循环
+							}
+						});
+						if(!x) {
+							return false; // 如果传入的数组里面有一个不等就全部false
+						}
+					});
+					if(x) {
+						return true;
+					} else {
+						return false;
+					}
+
+				}
+			},
+			addClass: function(cla) {
+				if(!$.isString(cla)) {
+					return this;
+				} else {
+					cla = $.trim(cla);
+					cla = cla.replace(/\s+/g, " ");
+					cla = cla.split(" ");
+					var nowClass = this[0].className;
+					nowClass = $.trim(nowClass);
+					nowClass = nowClass.replace(/\s+/g, " ");
+					nowClass = nowClass.split(" ");
+					var y = null;
+					$.each(cla, function(i, val) {
+						y = false;
+						var liveClass = val;
+						$.each(nowClass, function(i, val) {
+							if(liveClass == val) {
+								y = true;
+								return false;
+							}
+						});
+						if(!y) {
+							nowClass.push(val);
+						}
+					});
+					nowClass = nowClass.join(" ");
+					this[0].className = nowClass;
+				}
+
 			}
 		})
 	</script>
 	<script>
 		function x(a) {
 			console.log(a)
-		}
-		x($("a").css({"display":"block","height":"50px"}))
-//		console.log($("a").get(0))
+}
+			x($("a").css({
+				"display": "block",
+				"height": "50px"
+			}))
+
+			x($("a").hasClass("p100 p200 p1 p2 p200 p3"));
 	</script>
 
 </html>

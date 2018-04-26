@@ -112,7 +112,6 @@
 						}
 						return result;
 					},
-					//BUG，slice应该写在原型对象上。
 					slice: function() {
 						return jQuery([].slice.apply(this, arguments))
 					},
@@ -240,7 +239,7 @@
 		</script>
 		<script>
 			$(function() {
-			console.log($("a").slice(1))	
+				//console.log($("a").toArray())
 			})
 		</script>
 	</head>
@@ -595,6 +594,7 @@
 //		setTimeout(function(){
 //			$("b").off()
 //		},3000)
+
 	</script>
 	<script>
 		//ajax
@@ -603,7 +603,6 @@
 				url: location.href,    // 默认的url为本地地址
                 type: "GET",           // 默认请求的方法为GET
                 async: true,           // 默认为异步请求
-                dataType:"JSON",
                 contentType: "application/x-www-form-urlencoded; charset=UTF-8", // POST发送数据时设置头信息时候要使用
                 timeout: null,         // 默认不看延迟事件
                 success: function(){},
@@ -623,7 +622,7 @@
 				return result.slice(0,-1)
 			},
 			ajax:function(options){
-				var nowdate = {},timer;
+				var nowdate = {};
 				jQuery.extend(nowdate,$.ajaxSettings,options);
 				var xml = new XMLHttpRequest();
 				nowdate.data = $.urlString(nowdate.data);
@@ -634,123 +633,45 @@
 				}else if(nowdate.type === "POST"){
 //					console.log(nowdate.url)
 					xml.open('POST',nowdate.url);
-					xml.setRequestHeader('Content-Type', nowdate.contentType);
-//					xml.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-//					console.log(nowdate.data);
+//					xml.setRequestHeader('Content-Type', nowdate.contentType);
+					xml.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+					console.log(nowdate.data);
 					xml.send(nowdate.data);
 				}
 				xml.onreadystatechange = function(){
 					  if( xml.readyState === 4 ) {
-					  	clearInterval(timer);
                         nowdate.complete();
+
                         // 判断请求是否成功，成功过就执行successs方法，失败执行error方法
                         if( ( xml.status >= 200 && xml.status < 300 ) || xml.status === 304 ) {
-                        	var result;
-                        	switch(nowdate.dataType){
-                        		case "JSON" :
-                        		result = JSON.parse(xml.responseText);
-                        		break;
-                        		case "script":
-                        		eval(xml.responseText);
-                        		result = xml.responseText;
-                        		break;
-                        		case "style":
-                        		$("<style></style>").html(xml.responseText).appendTo("head");
-                        		result = xml.responseText;
-                        		break;
-                        		default:
-                        		result = xml.responseText;
-                        		break;
-                        	}
-                            nowdate.success(result);
+                            nowdate.success( xml.responseText );
                         }else {
                             nowdate.error( xml.status );
                         }
                     }
 				}
-				if(nowdate.timeout){
-					timer = setTimeout(function(){
-						xml.onreadystatechange=null;
-						nowdate.error( "超时" );
-					},nowdate.timeout)
-				}
-				
+			}
+		});
+		$.ajax({
+			url:"./heihei.json",
+			success:function(data){
+				console.log("over");
+				console.log(data);
 			},
-			get:function(url,data,fn){
-				var fn = fn || data||function(){};
-				$.ajax({
-					url:url,
-					data:data,
-					success:fn
-				})
+			error:function(){
+				console.log("fanche")
 			},
-			post:function(url,data,fn){
-				var fn = fn || data||function(){};
-				$.ajax({
-					url:url,
-					data:data,
-					type:"POST",
-					success:fn
-				})
+			complete:function(){
+				console.log("ok")
 			},
-			getCssFile:function(url,data,fn){
-				var fn = fn || data||function(){};
-				$.ajax({
-					url:url,
-					data:data,
-					success:fn,
-					dataType: 'style'
-				})
-			},
-			getScript:function(url,data,fn){
-				var fn = fn || data||function(){};
-				$.ajax({
-					url:url,
-					data:data,
-					success:fn,
-					dataType: 'script'
-				})
-			},
-			getJson:function(url,data,fn){
-				var fn = fn || data||function(){};
-				$.ajax({
-					url:url,
-					data:data,
-					success:fn
-				})
+//			type:"POST",
+			data:{
+				"two":"2",
+				"noe":1,
+				"name":"s我沙发上"
 			}
 			
-			
-			
-			
-		});
-//		$.ajax({
-//			url:"./css.json",
-//			success:function(data){
-////				console.log("over");
-//				console.log(data);
-//			},
-//			error:function(msg){
-//				console.log(msg)
-//			},
-//			complete:function(){
-////				console.log("ok")
-//			},
-////			type:"POST",
-//			data:{
-//				"two":"2",
-//				"noe":1,
-//				"name":"s我沙发上"
-//			},
-//			dataType:"style",
-//			timeout:100
-//			
-//		})
-		
-		$.getScript("script.json",function(e){
-			console.log(e)
 		})
-		console.dir($())
 	</script>
 
 </html>
